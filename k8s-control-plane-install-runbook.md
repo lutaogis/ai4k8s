@@ -10,6 +10,22 @@
 
 ## 一、固定参数（全程唯一来源，改这里即可）
 
+### 集群拓扑
+
+![集群拓扑](k8s-topology.svg)
+
+> 上图源文件：`k8s-topology.svg`（纯矢量，可缩放、可嵌入任何文档）。结构示意：
+
+```
+                    API VIP 192.168.1.100 (kube-vip ARP)
+                       │ 漂移，任一 master 可持有
+        ┌──────────────┼──────────────┐
+   k8s-master-1   k8s-master-2   k8s-master-3
+   192.168.1.101  192.168.1.102  192.168.1.103
+   apiserver+etcd apiserver+etcd apiserver+etcd   ← stacked etcd，3 member
+   Calico         Calico         Calico
+```
+
 | 变量 | 值 | 说明 |
 |---|---|---|
 | VIP | 192.168.1.100 | 未被占用的空闲 IP |

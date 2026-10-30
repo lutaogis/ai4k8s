@@ -9,6 +9,20 @@
 
 ## 一、集群拓扑与节点规划
 
+![集群拓扑](k8s-topology.svg)
+
+> 上图源文件：`k8s-topology.svg`（纯矢量，可缩放、可嵌入任何文档）。结构示意：
+
+```
+                    API VIP 192.168.1.100 (kube-vip ARP)
+                       │ 漂移，任一 master 可持有
+        ┌──────────────┼──────────────┐
+   k8s-master-1   k8s-master-2   k8s-master-3
+   192.168.1.101  192.168.1.102  192.168.1.103
+   apiserver+etcd apiserver+etcd apiserver+etcd   ← stacked etcd，3 member
+   Calico         Calico         Calico
+```
+
 | 主机名 | IP 地址 | 角色 | 配置建议 | 说明 |
 |---|---|---|---|---|
 | k8s-master-1 | 192.168.1.101 | control-plane | 4C / 8G / 60G SSD | etcd 对磁盘延迟敏感，必须 SSD |
