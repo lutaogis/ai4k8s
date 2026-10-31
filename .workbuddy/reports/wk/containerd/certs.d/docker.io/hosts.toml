@@ -1,0 +1,2 @@
+[host."https://docker.m.daocloud.io"]
+  capabilities = ["pull", "resolve"]

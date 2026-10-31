@@ -1,0 +1,155 @@
+===================== k8s-master-01 (192.168.1.101) =====================
+!!! 主机不可达（TCP 22 超时），未能采集。见集群层 Nodes 状态。
+
+
+===================== k8s-master-02 (192.168.1.102) =====================
+########## [H1] 基本信息 ##########
+hostname: k8s-master-02
+os: Ubuntu 24.04.3 LTS
+kernel: 6.8.0-147-generic
+uptime: up 20 hours, 16 minutes (since 2026-10-30 19:13:52)
+cpu: 4 核  Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz
+########## [H2] 负载与内存 ##########
+load: 0.45, 0.48, 0.43
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       1.4Gi       9.2Gi       2.7Mi       5.3Gi        14Gi
+Swap:             0B          0B          0B
+swap: 0 个 分区启用
+########## [H3] 磁盘 ##########
+  /                                      用 12G/57G (21%)
+  /                                      用 12G/57G (21%)
+  /                                      用 12G/57G (21%)
+-- inode --
+  inode 用 126360/3801088 (4%)
+-- etcd 数据大小 --
+-- containerd 数据大小 --
+3.1G	/var/lib/containerd
+-- 本地镜像数 --
+15
+-- 磁盘 IO 等待(5s 采样) --
+  wa=2%
+########## [H4] 关键服务 ##########
+  kubelet      active (restarts=0)
+  containerd   active (restarts=0)
+  sshd         active (restarts=0)
+-- 失败单元 --
+  0 个
+########## [H5] 时间同步 ##########
+                  Time zone: Asia/Shanghai (CST, +0800)
+  System clock synchronized: yes
+                NTP service: active
+########## [H6] 内核与硬件异常 ##########
+-- OOM 记录(近 7 天) --
+  0
+-- IO / 文件系统错误 --
+  0
+-- dmesg 中 error/warn 计数 --
+  44
+########## [H7] 网络 ##########
+  lo               UNKNOWN        127.0.0.1/8 ::1/128 
+  ens160           UP             192.168.1.102/24 240e:35f:807:4400:20c:29ff:fe12:fde6/64 240e:35f:85f:3100:20c:29ff:fe12:fde6/64 fe80::20c:29ff:fe12:fde6/64 
+  tunl0@NONE       UNKNOWN        10.244.95.0/32 
+  cali13e25a079f4@if3 UP             fe80::ecee:eeff:feee:eeee/64 
+  calib14ad46f801@if3 UP             fe80::ecee:eeff:feee:eeee/64 
+-- 网卡错误/丢包 --
+  ens160     rx_err=0 tx_err=0 rx_drop=14588
+-- conntrack --
+  当前 769 / 上限 131072
+-- 文件句柄 --
+  已用  / 上限 9223372036854775807
+-- 监听端口 --
+  0.0.0.0:179 users:(("bird",pid=6649,fd=7))
+  *:10250 users:(("kubelet",pid=5182,fd=16))
+  127.0.0.1:10257 users:(("kube-controller",pid=5601,fd=3))
+  127.0.0.1:10259 users:(("kube-scheduler",pid=5500,fd=3))
+  127.0.0.1:2379 users:(("etcd",pid=5467,fd=6))
+  192.168.1.102:2379 users:(("etcd",pid=5467,fd=7))
+  192.168.1.102:2380 users:(("etcd",pid=5467,fd=3))
+  *:6443 users:(("kube-apiserver",pid=5518,fd=3))
+########## [H8] kubelet 专项 ##########
+       Loaded: loaded (/usr/lib/systemd/system/kubelet.service; enabled; preset: enabled)
+      Drop-In: /usr/lib/systemd/system/kubelet.service.d
+               └─10-kubeadm.conf
+       Active: active (running) since Fri 2026-10-30 19:47:00 CST; 19h ago
+-- kubelet 近期错误 --
+-- containerd 近期错误 --
+########## [H9] Pod 容器数 ##########
+  运行中容器: 8
+  镜像总占用: 
+
+
+===================== k8s-master-03 (192.168.1.103) =====================
+########## [H1] 基本信息 ##########
+hostname: k8s-master-03
+os: Ubuntu 24.04.3 LTS
+kernel: 6.8.0-147-generic
+uptime: up 20 hours, 16 minutes (since 2026-10-30 19:13:52)
+cpu: 4 核  Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz
+########## [H2] 负载与内存 ##########
+load: 0.19, 0.35, 0.36
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       1.9Gi       9.1Gi       2.9Mi       5.0Gi        13Gi
+Swap:             0B          0B          0B
+swap: 0 个 分区启用
+########## [H3] 磁盘 ##########
+  /                                      用 11G/57G (20%)
+  /                                      用 11G/57G (20%)
+  /                                      用 11G/57G (20%)
+-- inode --
+  inode 用 123688/3801088 (4%)
+-- etcd 数据大小 --
+-- containerd 数据大小 --
+2.7G	/var/lib/containerd
+-- 本地镜像数 --
+15
+-- 磁盘 IO 等待(5s 采样) --
+  wa=2%
+########## [H4] 关键服务 ##########
+  kubelet      active (restarts=0)
+  containerd   active (restarts=0)
+  sshd         active (restarts=0)
+-- 失败单元 --
+  0 个
+########## [H5] 时间同步 ##########
+                  Time zone: Asia/Shanghai (CST, +0800)
+  System clock synchronized: yes
+                NTP service: active
+########## [H6] 内核与硬件异常 ##########
+-- OOM 记录(近 7 天) --
+  0
+-- IO / 文件系统错误 --
+  0
+-- dmesg 中 error/warn 计数 --
+  44
+########## [H7] 网络 ##########
+  lo               UNKNOWN        127.0.0.1/8 ::1/128 
+  ens160           UP             192.168.1.103/24 192.168.1.100/32 240e:35f:807:4400:20c:29ff:fe87:cd20/64 240e:35f:85f:3100:20c:29ff:fe87:cd20/64 fe80::20c:29ff:fe87:cd20/64 
+  tunl0@NONE       UNKNOWN        10.244.183.128/32 
+  calic0773d646a7@if3 UP             fe80::ecee:eeff:feee:eeee/64 
+  cali8050f40d1bc@if3 UP             fe80::ecee:eeff:feee:eeee/64 
+  cali61ce92beef1@if3 UP             fe80::ecee:eeff:feee:eeee/64 
+-- 网卡错误/丢包 --
+  ens160     rx_err=0 tx_err=0 rx_drop=14590
+-- conntrack --
+  当前 967 / 上限 131072
+-- 文件句柄 --
+  已用  / 上限 9223372036854775807
+-- 监听端口 --
+  0.0.0.0:179 users:(("bird",pid=6686,fd=7))
+  *:10250 users:(("kubelet",pid=5213,fd=22))
+  127.0.0.1:10257 users:(("kube-controller",pid=5530,fd=3))
+  127.0.0.1:10259 users:(("kube-scheduler",pid=5583,fd=3))
+  127.0.0.1:2379 users:(("etcd",pid=5498,fd=6))
+  192.168.1.103:2379 users:(("etcd",pid=5498,fd=7))
+  192.168.1.103:2380 users:(("etcd",pid=5498,fd=3))
+  *:6443 users:(("kube-apiserver",pid=5632,fd=3))
+########## [H8] kubelet 专项 ##########
+       Loaded: loaded (/usr/lib/systemd/system/kubelet.service; enabled; preset: enabled)
+      Drop-In: /usr/lib/systemd/system/kubelet.service.d
+               └─10-kubeadm.conf
+       Active: active (running) since Fri 2026-10-30 19:48:20 CST; 19h ago
+-- kubelet 近期错误 --
+-- containerd 近期错误 --
+########## [H9] Pod 容器数 ##########
+  运行中容器: 9
+  镜像总占用: 

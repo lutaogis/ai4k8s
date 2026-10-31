@@ -2,7 +2,7 @@
 
 > 适用范围：本工作区已部署的 3 节点 HA 控制平面集群
 > 集群参数：VIP `192.168.1.100:6443` / 网卡 `ens160` / DNS 域 `ai4system.com` / Pod `10.244.0.0/16` / Service `10.96.0.0/12` / Calico v3.33 IPIP / containerd 2.2.1
-> 配套文档：`k8s-ha-install-manual.md`（安装）、`k8s-inspection-report-2026-10-30.md`（巡检）
+> 配套文档：`k8s-ha-install-manual.md`（安装）、`k8s-inspection-report-2026-10-30.md`（巡检）、`kuboard-install-runbook.md`（面板速查卡，完整版见本手册第 14 章）
 
 ---
 
@@ -24,6 +24,7 @@
 | [11](#11-备份与升级) | 备份与升级 | 版本升级、灾备 |
 | [12](#12-高频-jsonpath-与自定义列模板) | JSONPath 模板库 | 批量提取信息 |
 | [13](#13-高危命令红黑榜) | **高危命令红黑榜** | **执行前必看** |
+| [14](#14-集群-web-管理面板headlamp--kuboard) | **Web 管理面板（Headlamp / Kuboard）** | **面板安装、登录、日常运维** |
 | [附录-a](#附录-a-别名与-shell-增强) | 别名与增强 | 少打字 |
 | [附录-b](#附录-b-按症状查命令) | 按症状查命令 | 出问题反查 |
 | [附录-c](#附录-c-本集群固定参数) | 本集群固定参数 | 复制粘贴用 |
@@ -1329,6 +1330,355 @@ kubectl edit / patch                    # 改完无法自动回滚，改前先�
 
 ---
 
+## 14. 集群 Web 管理面板（Headlamp / Kuboard）
+
+本集群上并存两个 Web 面板，2026-10-31 先后安装，NodePort 错开、互不干扰，可长期并存也可择一保留。
+
+### 14.1 选型与现状
+
+| 面板 | 地址 | 部署形态 | 登录方式 | 定位 | 源码 |
+|---|---|---|---|---|---|
+| **Headlamp** | <http://192.168.1.100:30081> | helm release `headlamp/headlamp`（chart 0.46.0），1 Pod | ServiceAccount Token | K8s 官方推荐（Dashboard 归档后的继任者），轻量、按用户真实身份鉴权 | Apache 2.0 开源 |
+| **Kuboard v4** | <http://192.168.1.100:30080> | 自建清单，`kuboard` + `kuboard-db` 两 Pod + hostPath PV | 账号密码 | 功能重（多集群 / Helm 套件 / 中文界面 / 批量编辑 YAML） | 闭源免费 |
+
+**本环境用法建议**
+
+- 日常看集群、查日志、进容器 → **Headlamp**：每个用户发自己的 token，权限走 K8s RBAC 天然隔离，出事能追到人
+- 需要中文界面、给非 K8s 背景的同事用、或要做多集群统一视图 → **Kuboard**
+- **Kubernetes Dashboard 不要再装**：`kubernetes/dashboard` 已于 2026-01-21 归档到 `kubernetes-retired/dashboard`（v7.14.0 为最终版），此后不再出 CVE 补丁
+
+从集群外访问前先确认两个 NodePort 是否可达：
+
+```bash
+# 在能访问 192.168.1.x 的机器上
+curl -s -o /dev/null -w 'kuboard:%{http_code}\n'  http://192.168.1.100:30080/
+curl -s -o /dev/null -w 'headlamp:%{http_code}\n' http://192.168.1.100:30081/
+# 两个都应是 200；若超时先查本机是否在 192.168.1.x 网段，再查节点防火墙/安全组
+```
+
+---
+
+### 14.2 Headlamp（官方推荐，开源）
+
+#### 14.2.1 安装过程
+
+前置：chart 在 GitHub Releases，国内直连常被中断，**先在本机下载再上传节点**；镜像走 containerd 的 ghcr 加速（见 9.3）。
+
+```bash
+# ① 装 helm（集群节点原本没有；从华为云镜像取二进制，比 get.helm.sh 稳）
+sudo curl -fsSL -o /tmp/helm.tgz \
+  https://mirrors.huaweicloud.com/helm/v3.20.2/helm-v3.20.2-linux-amd64.tar.gz
+sudo tar -zxf /tmp/helm.tgz -C /tmp
+sudo install /tmp/linux-amd64/helm /usr/local/bin/helm
+helm version --short          # v3.20.2
+
+# ② 取 chart 包（本机下载 → 上传 master-01，避免节点直连 GitHub 断流）
+#    https://github.com/kubernetes-sigs/headlamp/releases/download/headlamp-helm-0.46.0/headlamp-0.46.0.tgz
+#    scp headlamp-0.46.0.tgz lumz@192.168.1.101:/tmp/
+
+# ③ 安装（NodePort 30081，与 Kuboard 的 30080 错开）
+helm install headlamp /tmp/headlamp-0.46.0.tgz -n headlamp --create-namespace \
+  --set service.type=NodePort --set service.nodePort=30081
+
+# ④ 授权（实验环境用 cluster-admin；生产改为 view/edit 分级）
+kubectl create clusterrolebinding headlamp-admin-binding \
+  --clusterrole=cluster-admin --serviceaccount=headlamp:headlamp
+
+# ⑤ 生成长效 Token（1.24+ 不再自动建 Secret，必须手工建 sa-token 类型）
+kubectl apply -f - <<'EOF'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: headlamp-admin-token
+  namespace: headlamp
+  annotations:
+    kubernetes.io/service-account.name: headlamp
+type: kubernetes.io/service-account-token
+EOF
+
+# ⑥ 取 Token（约 900 字符的 JWT）
+kubectl -n headlamp get secret headlamp-admin-token -o jsonpath='{.data.token}' | base64 -d; echo
+
+# ⑦ 验证
+kubectl -n headlamp get pods,svc
+```
+
+安装后实际状态（2026-10-31 复核）：
+
+| 项 | 值 |
+|---|---|
+| helm release | `headlamp/headlamp`，chart 0.46.0，revision 1，状态 deployed |
+| 镜像 | `ghcr.io/headlamp-k8s/headlamp:v0.46.0` |
+| Service | `headlamp` NodePort `80:30081`，ClusterIP `10.105.67.98` |
+| Pod | 1/1 Running，落在 k8s-master-02 |
+| Token 副本 | 本地 `.workbuddy/reports/headlamp-admin-token.txt`（**敏感，勿入库**） |
+
+#### 14.2.2 使用手册
+
+**登录**：打开 <http://192.168.1.100:30081> → 认证方式选 **Token** → 粘贴上一步的 token → 登录。Headlamp 没有账号密码体系，身份完全由 token 对应的 SA 决定。
+
+**界面组织**：左侧栏按资源类型分组，顶部有全局搜索框（可直接搜 Pod / 节点 / 命名空间名）。
+
+| 位置 | 能看什么 | 对应 kubectl |
+|---|---|---|
+| Cluster → Overview | 集群版本、节点数、CPU/内存汇总、命名空间分布 | `kubectl cluster-info` / `get nodes` |
+| Cluster → Nodes | 节点状态、taints、容量、其上的 Pod | `get nodes -o wide` |
+| Workloads → Pods | 列表 + 状态、重启次数、所属节点；点进去有 **Logs / Terminal / Edit / Delete** | `get pods` / `logs` / `exec` |
+| Workloads → Deployments | 副本数、镜像、滚动状态；可直接 scale、restart、编辑 YAML | `get deploy` / `scale` / `rollout restart` |
+| Workloads → StatefulSets / DaemonSets / Jobs / CronJobs | 同类操作 | 对应 kubectl |
+| Storage | PV / PVC 绑定关系、StorageClass | `get pv,pvc,sc` |
+| Network | Service、Endpoints、Ingress | `get svc,ep,ing` |
+| Config | ConfigMap、Secret（Secret 默认脱敏显示） | `get cm,secret` |
+| Custom Resources | Calico 等 CRD 对象，按 CRD 分组浏览 | `get <cr>` |
+| Helm | 集群里的 helm release 列表与 values | `helm list -A` |
+
+> 菜单命名在 0.4x 各小版本间略有差异（例如 Helm 有时归在集群设置下），按"资源类型"找都能对上；找不到就用顶部搜索框直接搜对象名。
+
+**Pod 详情页最常用的四件事**
+
+1. **Logs**：可切换容器（多容器 Pod）、开关"跟随"、翻历史；排崩溃看上一轮要在详情里选 previous（或命令行 `--previous`，见 2.2）
+2. **Terminal**：Web 终端直接进容器，等价 `kubectl exec -it`（distroless 镜像没有 shell，进不去是正常的）
+3. **Edit**：Web 里改 YAML 后提交，等价 `kubectl edit`——**改前先复制原 YAML**，面板改错无法回滚
+4. **Delete**：删 Pod 会由控制器重建；删错对象无"CtrZ"
+
+**多用户（比 Kuboard 更值得推荐的地方）**：每人一个 SA + token，权限按 RBAC 收窄，不用共享 admin 凭据。
+
+```bash
+# 给只读观察者
+kubectl -n headlamp create serviceaccount viewer-alice
+kubectl create clusterrolebinding viewer-alice --clusterrole=view \
+  --serviceaccount=headlamp:viewer-alice
+# 再按 14.2.1 ⑤ 的方式给这个 SA 建 token Secret，把 token 发给本人
+
+# 验证某 token 的真实权限（不用登录面板）
+kubectl auth can-i --list --as=system:serviceaccount:headlamp:viewer-alice
+```
+
+#### 14.2.3 日常运维
+
+```bash
+# 状态
+kubectl -n headlamp get pods,svc
+helm -n headlamp list
+
+# 重启（改配置后）
+kubectl -n headlamp rollout restart deploy/headlamp
+
+# 轮换 admin token（删掉 Secret 重建，旧 token 立即失效）
+kubectl -n headlamp delete secret headlamp-admin-token
+# 然后重跑 14.2.1 ⑤ 的 apply
+
+# 升级（chart 包同样先下载再上传）
+helm -n headlamp upgrade headlamp /tmp/headlamp-<新版本>.tgz --reuse-values
+kubectl -n headlamp rollout status deploy/headlamp
+
+# 卸载
+helm -n headlamp uninstall headlamp
+kubectl delete clusterrolebinding headlamp-admin-binding
+kubectl delete ns headlamp
+```
+
+#### 14.2.4 常见问题
+
+| 现象 | 原因 / 处理 |
+|---|---|
+| 登录后一片 "Forbidden" | token 对应的 SA 没有权限（不是登录失败）；用 `kubectl auth can-i --list --as=...` 核 |
+| 登录报 token 无效 | Secret 没生成成功或已删；`kubectl -n headlamp get secret headlamp-admin-token -o yaml` 看是否有 `token` 字段 |
+| 页面能开但列表一直转圈 | 面板 Pod 到 apiserver 不通；`kubectl -n headlamp logs deploy/headlamp` 看是否有 `connection refused`（本集群 apiserver 走 VIP，注意 kube-vip 状态见 8.2） |
+| helm install 卡在下载 chart | GitHub Releases 国内被断；改本地下载上传（14.2.1 ②） |
+| 镜像拉不下来 | ghcr 加速是否生效，见 9.3 的三条验证 |
+
+---
+
+### 14.3 Kuboard v4（闭源免费，功能重）
+
+> v4 与 v3 架构不同：**没有 Agent**，服务端直接用 kubeconfig 的证书三件套连 apiserver 同步；自身依赖一个 MariaDB。
+
+#### 14.3.1 安装过程
+
+清单：工作区根目录 `kuboard-v4-install.yaml`（含全部修正，可重复 apply）。它创建：
+
+| 对象 | 说明 |
+|---|---|
+| Namespace `kuboard` | 打 `pod-security.kubernetes.io/enforce: baseline` |
+| ConfigMap `kuboard-db-init` | 首次启动时建库 `kuboard` + 用户 `kuboard/kuboardpwd` |
+| PV `kuboard-mariadb-pv` + PVC `kuboard-mariadb-data` | hostPath `/data/kuboard-mariadb`（**固定在 k8s-master-01**，nodeAffinity 钉住），5Gi，`Retain`，SC `kuboard-local` |
+| Deployment `kuboard-db` | MariaDB `11.3.2-jammy`，tcpSocket 探针 |
+| Deployment `kuboard` | 服务端 `kuboard:v4`，读 DB_URL / DB_USERNAME / DB_PASSWORD |
+| Service `kuboard` | NodePort `80:30080` |
+
+```bash
+# ① 部署（-f 用上传后的路径；节点上没有这个文件时先 scp 上去）
+kubectl apply -f /tmp/kuboard-v4-install.yaml
+
+# ② 等就绪（首次拉镜像约几分钟；DB 起来后 kuboard 才能连上库）
+kubectl -n kuboard get pods -w
+kubectl -n kuboard get pods,svc,pvc
+
+# ③ 验证入口
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.1.100:30080/
+```
+
+安装后实际状态（2026-10-31 复核）：
+
+| 项 | 值 |
+|---|---|
+| 镜像 | `swr.cn-east-2.myhuaweicloud.com/kuboard/kuboard:v4` / `.../mariadb:11.3.2-jammy` |
+| Service | `kuboard` NodePort `80:30080`；`kuboard-db` ClusterIP `10.109.75.56:3306` |
+| PVC | `kuboard-mariadb-data` Bound 5Gi；实际占用约 **193MB**（`du -sh /data/kuboard-mariadb`） |
+| 初始账号 | `admin` / **`Kuboard123`**（首次登录会提示 3 天内改密） |
+| 注意 | 2026-10-31 15:10 复核时初始密码已 `Bad credentials`，说明后台已改过密码；文档只记初始值，现用密码以改密结果为准 |
+
+#### 14.3.2 导入集群
+
+**方式 A：Web**（推荐，所见即所得）
+
+登录 → 集群列表 → 添加集群 → 选 **kubeconfig** → 粘贴 `admin.conf`（或证书三件套）→ API Server 填 `https://192.168.1.100:6443` → 保存。状态变 `ready` 即同步完成。
+
+```bash
+# 取 kubeconfig（只在 master-01 上，root 可读）
+sudo cat /etc/kubernetes/admin.conf
+# 注意：这是 cluster-admin 凭据，导进面板等于把最高权限交给面板保管（见 14.5）
+```
+
+**方式 B：API**（批量/自动化用；密码必须 base64，否则返回 `Bad credentials`）
+
+```bash
+BASE=http://192.168.1.100:30080
+
+# 1) 登录拿 accessToken（userSource 必填）
+TOKEN=$(curl -s -X POST $BASE/api/login.kuboard.cn/v4/login \
+  -H 'Content-Type: application/json' \
+  -d "{\"username\":\"admin\",\"password\":\"$(printf %s 'Kuboard123' | base64)\",\"userSource\":\"dao\"}" \
+  | python -c 'import sys,json;print(json.load(sys.stdin)["data"]["accessToken"])')
+
+# 2) 列出已导入集群（看 status / importStatus / k8sVersion）
+curl -s $BASE/api/cluster.kuboard.cn/v4/cluster -H "Authorization: Bearer $TOKEN" | head -c 800
+
+# 3) 连通性预检：把 body 里的 importSecretInfo 换成证书三件套的 JSON 字符串
+curl -s -X POST $BASE/api/cluster.kuboard.cn/v4/cluster/0/ping-apiserver \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d @cluster.json
+
+# 4) 正式导入：同一个 body POST 到 /api/cluster.kuboard.cn/v4/cluster
+```
+
+`cluster.json` 关键字段：
+
+```json
+{
+  "apiVersion": "cluster.kuboard.cn/v4", "kind": "Cluster",
+  "metadata": {"name": "k8s-prod-ha"},
+  "spec": {
+    "importType": "kubeconfig",
+    "importSecretInfo": "{\"certificateAuthorityData\":\"...\",\"clientCertificateData\":\"...\",\"clientKeyData\":\"...\"}",
+    "apiServerUrl": "https://192.168.1.100:6443",
+    "apiServerSkipVerifyHostname": true
+  }
+}
+```
+
+#### 14.3.3 使用手册
+
+**登录**：<http://192.168.1.100:30080> → admin + 密码。
+
+**主要功能**（进入集群 `k8s-prod-ha` 后，左侧栏自上而下）：
+
+| 菜单 | 能做什么 | 常用场景 |
+|---|---|---|
+| 概览 | 节点/CPU/内存/存储水位、Pod 异常数、事件 | 每天上班第一眼 |
+| 节点 | 节点状态、taint、容量、其上 Pod；可 cordon/drain | 节点维护（对应 1.4） |
+| 命名空间 | 建/删 ns、资源配额 | 起新业务前 |
+| 工作负载 | Deployment/StatefulSet/DaemonSet/Job/CronJob 列表；扩缩容、重启、编辑 YAML、看历史 Pod | 发版、回滚、改副本 |
+| 容器组（Pod） | 状态、事件、**日志**、**终端**、**文件浏览器**、编辑 YAML | 排错主力（对应第 3 章） |
+| 网络 | Service / Ingress / Endpoint | 查"服务访问不到"（3.4） |
+| 配置 | ConfigMap / Secret（Secret 可显隐） | 改配置 |
+| 存储 | PV / PVC / StorageClass | PVC Pending（5） |
+| 事件 | 集群事件（本集群 EventTTL 1 小时，事后查不到） | 故障窗口内取证 |
+| 套件（Helm） | 用内置 helm 装/升/删 chart（镜像自带 helm 3.13/3.16/3.18） | 装 metrics-server、ingress 等 |
+| 用户与授权 | Kuboard 自己的用户、角色、集群授权（**不是** K8s RBAC 直通） | 给同事开只读账号 |
+
+**Web 终端 / 日志的边界**：两者都通过服务端代理到 apiserver，**Pod 里没有 shell（distroless）时终端同样进不去**，此时用临时容器（2.3）。
+
+**多集群**：集群列表里可继续添加其它集群，切换后同一套菜单复用；这也是 Kuboard 相对 Headlamp 的主要优势。
+
+#### 14.3.4 日常运维
+
+```bash
+# 状态与日志
+kubectl -n kuboard get pods,svc,pvc
+kubectl -n kuboard logs deploy/kuboard --tail=50
+kubectl -n kuboard logs deploy/kuboard-db --tail=30
+
+# 重启服务端（不动 DB）
+kubectl -n kuboard rollout restart deploy/kuboard
+
+# 升级服务端镜像（DB 不用动）
+kubectl -n kuboard set image deploy/kuboard \
+  kuboard=swr.cn-east-2.myhuaweicloud.com/kuboard/kuboard:v4.x
+kubectl -n kuboard rollout status deploy/kuboard
+
+# 数据备份（在 k8s-master-01 上；193MB，秒级）
+sudo tar czf /root/kuboard-db-backup-$(date +%F).tgz -C /data kuboard-mariadb
+
+# 恢复（先停 Pod，避免文件锁冲突，见 14.4）
+kubectl -n kuboard scale deploy/kuboard --replicas=0
+kubectl -n kuboard scale deploy/kuboard-db --replicas=0
+sudo rm -rf /data/kuboard-mariadb && sudo tar xzf /root/kuboard-db-backup-2026-10-31.tgz -C /data
+kubectl -n kuboard scale deploy/kuboard-db --replicas=1   # DB Ready 后再起服务端
+kubectl -n kuboard scale deploy/kuboard --replicas=1
+
+# 完整卸载（数据在 hostPath，删 PV 不会自动清）
+kubectl delete -f kuboard-v4-install.yaml
+sudo rm -rf /data/kuboard-mariadb        # 确认不再需要后再执行
+```
+
+> 改 DB 的 Deployment（镜像/探针/资源）**必须先 `--replicas=0` 再改**，否则新旧 Pod 抢 hostPath 文件锁。
+
+---
+
+### 14.4 安装踩过的坑（复装必读）
+
+| # | 现象 | 根因 | 正确做法 |
+|---|---|---|---|
+| 1 | Kuboard 日志 `UnknownHostException: kuboard-db.kuboard.svc.cluster.local` | 本集群 kubeadm `clusterDomain=ai4system.com`，**不是默认 cluster.local** | DB_URL 写 `kuboard-db.kuboard.svc.ai4system.com`；自查：`kubectl -n kube-system get cm coredns -o jsonpath='{.data.Corefile}' \| grep -i domain`（见 4.2） |
+| 2 | `kuboard-db` 永远 0/1，事件里 `exec: "mysqladmin": executable file not found` | MariaDB 11.x 镜像只带 `mariadb-admin`，没有 `mysqladmin` | 探针改 `tcpSocket: 3306`（清单已改） |
+| 3 | 新 DB Pod `CrashLoopBackOff`，旧 Pod 还活着 | Deployment 默认 `maxSurge` 让新旧 Pod 并存，hostPath 上 aria/innodb **文件锁**只能一个进程持有 | 改 DB 配置前 `scale --replicas=0`，确认 Pod 消失后再 `--replicas=1` |
+| 4 | 刚装完 `kuboard` Pod 反复重启（本次 6 次，exit code 1） | DB 未 Ready 时服务端连不上库直接退出，属预期 | 等 DB 1/1 后自动稳定；持续重启才查 `logs --previous` |
+| 5 | `helm install headlamp headlamp/headlamp` 卡住 / 中断 | GitHub Releases 国内直连不稳 | 本机下载 chart 包 → 上传节点 → `helm install ./xxx.tgz` |
+
+---
+
+### 14.5 安全与合规（上生产前必须处理）
+
+| 风险 | 现状 | 处理 |
+|---|---|---|
+| **HTTP 明文** | 两个面板都是 `http://`，登录凭据与 token 明文过网 | 前置 nginx/Ingress 做 TLS；WebSocket 要放行（终端功能依赖） |
+| **cluster-admin 凭据托管** | Kuboard 库里存着 `admin.conf` 全套证书；Headlamp 用 cluster-admin 的 SA token | 生产改最小权限：Headlamp 按人发 `view`/`edit`；Kuboard 至少换成受限 SA 的 kubeconfig |
+| **Kuboard 闭源** | 产品仓库已从 GitHub 下架，只有编译镜像 | 敏感环境优先用 Headlamp（Apache 2.0 可审计）；保留 Kuboard 则记录版本、限制外网可达 |
+| **数据目录敏感** | `/data/kuboard-mariadb` 内含集群凭据，`Retain` 策略 | 目录权限收紧、备份加密、不入 Git |
+| **NodePort 暴露面** | 30080/30081 对所有能到节点的人开放 | 安全组只放行运维网段；或用 Ingress + 认证 |
+
+---
+
+### 14.6 速查
+
+```bash
+# 两个面板一眼看状态
+kubectl -n headlamp get pods,svc; kubectl -n kuboard get pods,svc
+
+# Headlamp token
+kubectl -n headlamp get secret headlamp-admin-token -o jsonpath='{.data.token}' | base64 -d; echo
+
+# Kuboard 数据体积 / 备份
+sudo du -sh /data/kuboard-mariadb
+sudo tar czf /root/kuboard-db-$(date +%F).tgz -C /data kuboard-mariadb
+
+# 端口是否被占（装第三个面板前查）
+kubectl get svc -A -o jsonpath='{range .items[?(@.spec.type=="NodePort")]}{.metadata.namespace}{"/"}{.metadata.name}{" "}{.spec.ports[*].nodePort}{"\n"}{end}'
+```
+
+---
+
 ## 附录 A 别名与 shell 增强
 
 ```bash
@@ -1418,6 +1768,10 @@ kubectl get pods -A --field-selector reason=Evicted            # 不报错，但
 | PVC Pending | `describe pvc` + `kubectl get sc`（本集群无 SC） | 5 |
 | Pod 删不掉 | 查 finalizer → `patch --type=merge` | 3.3 |
 | 内存/CPU 看不清 | `kubectl top` 或 `kubectl get --raw .../stats/summary` | 10 |
+| Web 面板打不开 | `kubectl -n <headlamp\|kuboard> get pods,svc` + 本机是否在 192.168.1.x | 14.1 |
+| Headlamp 登录无效 / 全是 Forbidden | 重取 token；`kubectl auth can-i --list --as=...` | 14.2.4 |
+| Kuboard 登录 Bad credentials | 密码已改过（初始 `Kuboard123`）或 DB 未就绪 | 14.3.1 |
+| 面板登录后看不到新资源 | 面板同步/缓存滞后 → 重启对应 deploy | 14.2.3 / 14.3.4 |
 
 ---
 
@@ -1426,7 +1780,7 @@ kubectl get pods -A --field-selector reason=Evicted            # 不报错，但
 | 项目 | 值 |
 |---|---|
 | API 入口 | `https://192.168.1.100:6443`（VIP，kube-vip v0.8.9） |
-| 节点 | `k8s-master-01` .101 / `k8s-master-02` .102 / `k8s-master-03` .103 |
+| 节点 | 控制面 `k8s-master-01` .101 / `k8s-master-02` .102 / `k8s-master-03` .103；工作节点 **`k8s-worker-01` .104** 与 **`k8s-worker-02` .105**（均 8C/31G/96G，2026-10-31 扩容，标签 `node-role.kubernetes.io/worker`；`.105` 原名 `k8s-worker-05`，当日移除后改名重加） |
 | 网卡 | `ens160` |
 | 网关 / DNS | `192.168.1.1` |
 | DNS 域 | `ai4system.com` |
@@ -1440,6 +1794,9 @@ kubectl get pods -A --field-selector reason=Evicted            # 不报错，但
 | PKI 备份 | `/root/k8s-pki-*.tar.gz` |
 | 镜像加速 | docker.io → `docker.m.daocloud.io`；quay.io → `quay.m.daocloud.io`；ghcr.io → `ghcr.m.daocloud.io` |
 | 认证 | 三台均为 `lumz/lumz1021`（**仅测试环境**） |
+| Web 面板 | Headlamp `http://192.168.1.100:30081`（粘贴 SA token 登录，Secret `headlamp/headlamp-admin-token`）；Kuboard `http://192.168.1.100:30080`（admin，初始 `Kuboard123`） |
+| helm | master-01 `/usr/local/bin/helm` v3.20.2（headlamp release 用它装） |
+| Kuboard 数据 | master-01 `/data/kuboard-mariadb`（hostPath PV 5Gi，实占约 193MB） |
 | 巡检脚本 | `scripts/k8s_inspect_cluster.sh`、`scripts/host_inspect.sh`（`SUDO_PW` 传密码） |
 
 ---
@@ -1449,3 +1806,5 @@ kubectl get pods -A --field-selector reason=Evicted            # 不报错，但
 | 日期 | 说明 |
 |---|---|
 | 2026-10-30 | 初版。按场景组织，13 章 + 3 附录；参数按实测集群填写；含五步排错法、Pod 状态字典、高危命令红黑榜、症状反查索引。其中 Calico 健康检查、IPAM 统计、Event TTL、`sudo kubectl` 等 6 处易错写法已在 k8s-master-01 实机验证并修正 |
+| 2026-10-31 | 新增第 14 章「集群 Web 管理面板（Headlamp / Kuboard）」：两套面板的完整安装过程（helm 前置、chart 离线安装、hostPath PV、cluster-admin 绑定、长效 token、API 导入集群）、使用手册（菜单与 kubectl 对照、日志/终端/YAML 编辑边界、多用户 RBAC）、日常运维与备份恢复、5 个踩坑记录、安全整改项。目录、症状反查表、固定参数表同步更新 |
+| 2026-10-31 | **集群扩容为 5 节点**：新增 `k8s-worker-01 / 192.168.1.104` 与 `.105`（均 8C/31G/96G，含 cri-tools），Calico 自动分配 block `10.244.36.192/26` / `10.244.118.64/26`；`.105` 初次以 `k8s-worker-05` 加入，同日按标准流程移除并改名 `k8s-worker-02` 重新加入。附录 C 固定参数同步。扩容见 `k8s-add-worker-node-plan.md`，移除见 `k8s-remove-worker-node-plan.md` |

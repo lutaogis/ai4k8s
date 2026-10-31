@@ -1,0 +1,55 @@
+===== NODES =====
+NAME            STATUS   ROLES           AGE     VERSION    INTERNAL-IP     EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+k8s-master-01   Ready    control-plane   26h     v1.34.13   192.168.1.101   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+k8s-master-02   Ready    control-plane   26h     v1.34.13   192.168.1.102   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+k8s-master-03   Ready    control-plane   26h     v1.34.13   192.168.1.103   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+k8s-worker-01   Ready    worker          5h20m   v1.34.13   192.168.1.104   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+k8s-worker-02   Ready    worker          4h26m   v1.34.13   192.168.1.105   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+===== PODS =====
+NAMESPACE     NAME                                       READY   STATUS      RESTARTS        AGE     IP               NODE            NOMINATED NODE   READINESS GATES
+default       dns-test                                   0/1     Completed   0               26h     10.244.95.1      k8s-master-02   <none>           <none>
+headlamp      headlamp-b4569c978-b7swk                   1/1     Running     0               21h     10.244.95.6      k8s-master-02   <none>           <none>
+kube-system   calico-kube-controllers-67777bfd7c-8vsjf   1/1     Running     0               6h48m   10.244.183.135   k8s-master-03   <none>           <none>
+kube-system   calico-node-6q49c                          1/1     Running     0               26h     192.168.1.103    k8s-master-03   <none>           <none>
+kube-system   calico-node-7gdbc                          1/1     Running     0               5h20m   192.168.1.104    k8s-worker-01   <none>           <none>
+kube-system   calico-node-j4ztz                          1/1     Running     0               26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   calico-node-nt846                          1/1     Running     0               4h26m   192.168.1.105    k8s-worker-02   <none>           <none>
+kube-system   calico-node-nzxnh                          1/1     Running     1 (6h36m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   coredns-784f5c86b4-lpzht                   1/1     Running     0               7h1m    10.244.95.7      k8s-master-02   <none>           <none>
+kube-system   coredns-784f5c86b4-zvmz9                   1/1     Running     0               7h1m    10.244.183.132   k8s-master-03   <none>           <none>
+kube-system   etcd-k8s-master-01                         1/1     Running     1 (6h36m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   etcd-k8s-master-02                         1/1     Running     0               26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   etcd-k8s-master-03                         1/1     Running     0               26h     192.168.1.103    k8s-master-03   <none>           <none>
+kube-system   kube-apiserver-k8s-master-01               1/1     Running     1 (6h36m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   kube-apiserver-k8s-master-02               1/1     Running     0               26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   kube-apiserver-k8s-master-03               1/1     Running     0               26h     192.168.1.103    k8s-master-03   <none>           <none>
+kube-system   kube-controller-manager-k8s-master-01      1/1     Running     1 (6h36m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   kube-controller-manager-k8s-master-02      1/1     Running     0               26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   kube-controller-manager-k8s-master-03      1/1     Running     0               26h     192.168.1.103    k8s-master-03   <none>           <none>
+kube-system   kube-proxy-9tr9l                           1/1     Running     1 (6h36m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   kube-proxy-j9dsg                           1/1     Running     0               4h26m   192.168.1.105    k8s-worker-02   <none>           <none>
+kube-system   kube-proxy-mq6jq                           1/1     Running     0               5h20m   192.168.1.104    k8s-worker-01   <none>           <none>
+kube-system   kube-proxy-r6kzk                           1/1     Running     0               26h     192.168.1.103    k8s-master-03   <none>           <none>
+kube-system   kube-proxy-t64wp                           1/1     Running     0               26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   kube-scheduler-k8s-master-01               1/1     Running     1 (6h36m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   kube-scheduler-k8s-master-02               1/1     Running     0               26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   kube-scheduler-k8s-master-03               1/1     Running     0               26h     192.168.1.103    k8s-master-03   <none>           <none>
+kube-system   kube-vip-k8s-master-01                     1/1     Running     4 (5h46m ago)   26h     192.168.1.101    k8s-master-01   <none>           <none>
+kube-system   kube-vip-k8s-master-02                     1/1     Running     3 (5h46m ago)   26h     192.168.1.102    k8s-master-02   <none>           <none>
+kube-system   kube-vip-k8s-master-03                     1/1     Running     2 (5h47m ago)   26h     192.168.1.103    k8s-master-03   <none>           <none>
+kuboard       kuboard-695ff746b7-9hnqr                   1/1     Running     6 (22h ago)     22h     10.244.183.131   k8s-master-03   <none>           <none>
+kuboard       kuboard-db-5b6446f44b-cmnvj                1/1     Running     0               6h48m   10.244.151.136   k8s-master-01   <none>           <none>
+===== CRONJOBS =====
+No resources found
+===== PV =====
+NAME                 CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                          STORAGECLASS    VOLUMEATTRIBUTESCLASS   REASON   AGE
+kuboard-mariadb-pv   5Gi        RWO            Retain           Bound    kuboard/kuboard-mariadb-data   kuboard-local   <unset>                          22h
+===== ETCD MEMBERS =====
++------------------+---------+---------------+----------------------------+----------------------------+------------+
+|        ID        | STATUS  |     NAME      |         PEER ADDRS         |        CLIENT ADDRS        | IS LEARNER |
++------------------+---------+---------------+----------------------------+----------------------------+------------+
+| 25e3a1c6e43f205b | started | k8s-master-03 | https://192.168.1.103:2380 | https://192.168.1.103:2379 |      false |
+| 540fa0a1b3b843f3 | started | k8s-master-01 | https://192.168.1.101:2380 | https://192.168.1.101:2379 |      false |
+| 668d4493033dbddc | started | k8s-master-02 | https://192.168.1.102:2380 | https://192.168.1.102:2379 |      false |
++------------------+---------+---------------+----------------------------+----------------------------+------------+
+e30a4a29e0b2215fe889ceadcfad161a  /var/backups/etcd/etcd-snap-pre-shutdown-20261031-2215.db

@@ -1,6 +1,6 @@
-<svg width="100%" viewBox="0 0 680 554" role="img" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif">
-<title>Kubernetes v1.34 三节点高可用控制平面拓扑</title>
-<desc>运维终端经 VIP 192.168.1.100:6443 访问三台控制平面节点，每台含 apiserver、etcd、scheduler、controller-manager、kubelet、containerd、calico-node、kube-vip。</desc>
+<svg width="100%" viewBox="0 0 680 660" role="img" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<title>Kubernetes v1.34 三节点高可用控制平面 + 工作节点拓扑</title>
+<desc>运维终端经 VIP 192.168.1.100:6443 访问三台控制平面节点，每台含 apiserver、etcd、scheduler、controller-manager、kubelet、containerd、calico-node、kube-vip；另有两台纯工作节点 k8s-worker-01（192.168.1.104）与 k8s-worker-02（192.168.1.105），只跑 kubelet、containerd、calico-node、kube-proxy，不参与 etcd 与 VIP。</desc>
 <defs>
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
     <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -107,5 +107,21 @@
 <rect x="56" y="464" width="568" height="36" rx="8" fill="#FFFFFF" stroke="#B4B2A9" stroke-width="0.5"/>
 <text class="ts" x="340" y="482" text-anchor="middle" dominant-baseline="central" fill="#2C2C2A">Service 网络 10.96.0.0/12 · DNS 域 ai4system.com</text>
 
-<text x="340" y="534" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5F5E5A">物理网段 192.168.1.0/24 · 网卡 ens160 · 网关 / DNS 192.168.1.1 · 同二层，kube-vip ARP 生效前提</text>
+<path d="M340 514 L340 530" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+<g>
+<rect x="56" y="530" width="272" height="70" rx="12" fill="#E6F4EA" stroke="#2E7D32" stroke-width="0.5"/>
+<text class="th" x="70" y="550" dominant-baseline="central" fill="#1B5E20">k8s-worker-01</text>
+<text class="ts" x="70" y="569" dominant-baseline="central" fill="#2E7D32">192.168.1.104 · 8C / 31G / 96G</text>
+<text class="ts" x="70" y="588" dominant-baseline="central" fill="#2E7D32">calico-node · kube-proxy（无 etcd / vip）</text>
+</g>
+
+<g>
+<rect x="352" y="530" width="272" height="70" rx="12" fill="#E6F4EA" stroke="#2E7D32" stroke-width="0.5"/>
+<text class="th" x="366" y="550" dominant-baseline="central" fill="#1B5E20">k8s-worker-02</text>
+<text class="ts" x="366" y="569" dominant-baseline="central" fill="#2E7D32">192.168.1.105 · 8C / 31G / 96G</text>
+<text class="ts" x="366" y="588" dominant-baseline="central" fill="#2E7D32">calico-node · kube-proxy（无 etcd / vip）</text>
+</g>
+
+<text x="340" y="634" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#5F5E5A">物理网段 192.168.1.0/24 · 网卡 ens160 · 网关 / DNS 192.168.1.1 · 同二层，kube-vip ARP 生效前提</text>
 </svg>

@@ -1,0 +1,166 @@
+########## [01] 集群基本信息 ##########
+Client Version: v1.34.13
+Server Version: v1.34.13
+-- healthz --
+ok
+-- API 响应时间(3次) --
+  0.08 s
+  0.08 s
+  0.08 s
+-- 命名空间数 --
+6
+-- 全集群 Pod 数 --
+30
+########## [02] 节点状态 ##########
+NAME            STATUS     ROLES           AGE   VERSION    INTERNAL-IP     EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+k8s-master-01   NotReady   control-plane   19h   v1.34.13   192.168.1.101   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+k8s-master-02   Ready      control-plane   19h   v1.34.13   192.168.1.102   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+k8s-master-03   Ready      control-plane   19h   v1.34.13   192.168.1.103   <none>        Ubuntu 24.04.3 LTS   6.8.0-147-generic   containerd://2.2.1
+-- Conditions --
+k8s-master-01: NetworkUnavailable=False MemoryPressure=Unknown DiskPressure=Unknown PIDPressure=Unknown Ready=Unknown 
+k8s-master-02: NetworkUnavailable=False MemoryPressure=False DiskPressure=False PIDPressure=False Ready=True 
+k8s-master-03: NetworkUnavailable=False MemoryPressure=False DiskPressure=False PIDPressure=False Ready=True 
+-- Taints --
+k8s-master-01   [map[effect:NoSchedule key:node.kubernetes.io/unreachable timeAdded:2026-10-31T07:22:35Z] map[effect:NoExecute key:node.kubernetes.io/unreachable timeAdded:2026-10-31T07:22:35Z]]
+k8s-master-02   <none>
+k8s-master-03   <none>
+########## [03] 资源容量与分配率 ##########
+--- k8s-master-01 ---
+  cpu                1 (25%)     1 (25%)
+  memory             356Mi (2%)  1Gi (6%)
+--- k8s-master-02 ---
+  cpu                1 (25%)     0 (0%)
+  memory             170Mi (1%)  170Mi (1%)
+--- k8s-master-03 ---
+  cpu                1100m (27%)  1 (25%)
+  memory             426Mi (2%)   1194Mi (7%)
+########## [04] 控制面组件 ##########
+NAME                                       READY   STATUS        RESTARTS   AGE    IP               NODE            NOMINATED NODE   READINESS GATES
+calico-kube-controllers-67777bfd7c-5kq89   1/1     Terminating   0          19h    10.244.151.131   k8s-master-01   <none>           <none>
+calico-kube-controllers-67777bfd7c-8vsjf   1/1     Running       0          2m1s   10.244.183.135   k8s-master-03   <none>           <none>
+calico-node-6q49c                          1/1     Running       0          19h    192.168.1.103    k8s-master-03   <none>           <none>
+calico-node-j4ztz                          1/1     Running       0          19h    192.168.1.102    k8s-master-02   <none>           <none>
+calico-node-nzxnh                          1/1     Running       0          19h    192.168.1.101    k8s-master-01   <none>           <none>
+coredns-784f5c86b4-lpzht                   1/1     Running       0          15m    10.244.95.7      k8s-master-02   <none>           <none>
+coredns-784f5c86b4-zvmz9                   1/1     Running       0          15m    10.244.183.132   k8s-master-03   <none>           <none>
+etcd-k8s-master-01                         1/1     Running       0          19h    192.168.1.101    k8s-master-01   <none>           <none>
+etcd-k8s-master-02                         1/1     Running       0          19h    192.168.1.102    k8s-master-02   <none>           <none>
+etcd-k8s-master-03                         1/1     Running       0          19h    192.168.1.103    k8s-master-03   <none>           <none>
+kube-apiserver-k8s-master-01               1/1     Running       0          19h    192.168.1.101    k8s-master-01   <none>           <none>
+kube-apiserver-k8s-master-02               1/1     Running       0          19h    192.168.1.102    k8s-master-02   <none>           <none>
+kube-apiserver-k8s-master-03               1/1     Running       0          19h    192.168.1.103    k8s-master-03   <none>           <none>
+kube-controller-manager-k8s-master-01      1/1     Running       0          19h    192.168.1.101    k8s-master-01   <none>           <none>
+kube-controller-manager-k8s-master-02      1/1     Running       0          19h    192.168.1.102    k8s-master-02   <none>           <none>
+kube-controller-manager-k8s-master-03      1/1     Running       0          19h    192.168.1.103    k8s-master-03   <none>           <none>
+kube-proxy-9tr9l                           1/1     Running       0          19h    192.168.1.101    k8s-master-01   <none>           <none>
+kube-proxy-r6kzk                           1/1     Running       0          19h    192.168.1.103    k8s-master-03   <none>           <none>
+kube-proxy-t64wp                           1/1     Running       0          19h    192.168.1.102    k8s-master-02   <none>           <none>
+-- 重启次数 Top5 --
+kube-system   kube-vip-k8s-master-02                     0
+kube-system   kube-vip-k8s-master-03                     0
+headlamp      headlamp-b4569c978-b7swk                   0
+kuboard       kuboard-db-5b6446f44b-5dwf4                0
+kuboard       kuboard-695ff746b7-9hnqr                   6
+-- 组件近 1 小时 ERROR 日志量 --
+  kube-apiserver-k8s-master-01: 0 行
+  kube-apiserver-k8s-master-02: 15 行
+  kube-apiserver-k8s-master-03: 2 行
+  kube-controller-manager-k8s-master-01: 0 行
+  kube-controller-manager-k8s-master-02: 0 行
+  kube-controller-manager-k8s-master-03: 0 行
+  kube-scheduler-k8s-master-01: 0 行
+  kube-scheduler-k8s-master-02: 0 行
+  kube-scheduler-k8s-master-03: 0 行
+########## [05] etcd 集群 ##########
+-- health --
+-- member --
+-- alarm --
+-- etcd 数据目录大小 --
+########## [06] 网络与 DNS ##########
+-- calico-node --
+calico-node-6q49c 1/1 Running 0
+calico-node-j4ztz 1/1 Running 0
+calico-node-nzxnh 1/1 Running 0
+-- IPPool --
+default-ipv4-ippool   10.244.0.0/16   26
+-- IPAM 已分配块 --
+3
+-- CoreDNS --
+coredns   2/2   2     2     19h
+-- kube-proxy --
+kube-proxy   3     3     2     3     2     kubernetes.io/os=linux   19h
+-- VIP --
+2 packets transmitted, 2 received, 0% packet loss, time 1000ms
+rtt min/avg/max/mdev = 0.120/0.128/0.136/0.008 ms
+-- VIP lease 持有者 --
+k8s-master-03  renewTime=2026-10-31T07:29:47.659647Z
+-- Endpoints 为空的 Service --
+  kuboard/kuboard-db
+########## [07] 工作负载健康 ##########
+-- 非 Running/Succeeded 的 Pod --
+  kube-system calico-kube-controllers-67777bfd7c-5kq89 Terminating 0
+  kuboard kuboard-db-5b6446f44b-5dwf4 Terminating 0
+  kuboard kuboard-db-5b6446f44b-cmnvj Pending 0
+-- 未就绪 Deployment --
+  kuboard/kuboard-db ready=0/1
+-- 失败 Job --
+-- Evicted/被驱逐历史 --
+0
+########## [08] 存储 ##########
+StorageClass: 0 个
+PV: 1 个  PVC: 1 个
+-- emptyDir 使用量 Top --
+########## [09] 证书有效期 ##########
+[check-expiration] Use 'kubeadm init phase upload-config kubeadm --config your-config-file' to re-upload it.
+CERTIFICATE                  EXPIRES                  RESIDUAL TIME   CERTIFICATE AUTHORITY   EXTERNALLY MANAGED
+admin.conf                   Oct 30, 2027 11:46 UTC   364d            ca                      no      
+apiserver                    Oct 30, 2027 11:46 UTC   364d            ca                      no      
+apiserver-etcd-client        Oct 30, 2027 11:46 UTC   364d            etcd-ca                 no      
+apiserver-kubelet-client     Oct 30, 2027 11:46 UTC   364d            ca                      no      
+controller-manager.conf      Oct 30, 2027 11:46 UTC   364d            ca                      no      
+etcd-healthcheck-client      Oct 30, 2027 11:46 UTC   364d            etcd-ca                 no      
+etcd-peer                    Oct 30, 2027 11:46 UTC   364d            etcd-ca                 no      
+etcd-server                  Oct 30, 2027 11:46 UTC   364d            etcd-ca                 no      
+front-proxy-client           Oct 30, 2027 11:46 UTC   364d            front-proxy-ca          no      
+scheduler.conf               Oct 30, 2027 11:46 UTC   364d            ca                      no      
+!MISSING! super-admin.conf                                                                    
+CERTIFICATE AUTHORITY   EXPIRES                  RESIDUAL TIME   EXTERNALLY MANAGED
+ca                      Oct 27, 2036 11:39 UTC   9y              no      
+etcd-ca                 Oct 27, 2036 11:39 UTC   9y              no      
+front-proxy-ca          Oct 27, 2036 11:39 UTC   9y              no      
+########## [10] 最近告警事件 ##########
+  kube-system NodeNotReady pod/calico-kube-controllers-67777bfd7c-5kq89 NodeNotReady       pod/calico-kube-controllers-67777bfd7c-5kq89   Node is not re
+  kube-system NodeNotReady pod/kube-controller-manager-k8s-master-01 NodeNotReady       pod/kube-controller-manager-k8s-master-01      Node is not re
+  kube-system NodeNotReady pod/kube-proxy-9tr9l NodeNotReady       pod/kube-proxy-9tr9l                           Node is not re
+  kube-system NodeNotReady pod/kube-scheduler-k8s-master-01 NodeNotReady       pod/kube-scheduler-k8s-master-01               Node is not re
+  kube-system NodeNotReady pod/kube-vip-k8s-master-01 NodeNotReady       pod/kube-vip-k8s-master-01                     Node is not re
+  kuboard NodeNotReady pod/kuboard-db-5b6446f44b-5dwf4 NodeNotReady       pod/kuboard-db-5b6446f44b-5dwf4                Node is not re
+  kuboard FailedScheduling pod/kuboard-db-5b6446f44b-cmnvj 0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 node(s) didn't ma
+  kuboard Unhealthy pod/kuboard-695ff746b7-9hnqr Readiness probe failed: Get "http://10.244.183.131:80/": context deadline exceed
+########## [11] 安全基线 ##########
+-- apiserver 关键参数 --
+--authorization-mode=Node,RBAC
+-- 绑定 system:masters 的凭据 --
+1
+-- 拥有 cluster-admin 的 ServiceAccount --
+                      "kind": "ServiceAccount",
+                      "kind": "ServiceAccount",
+                      "kind": "ServiceAccount",
+                      "kind": "ServiceAccount",
+                      "kind": "ServiceAccount",
+-- NetworkPolicy 数量 --
+0
+-- 命名空间 PSA 标签 --
+default           <none>
+headlamp          <none>
+kube-node-lease   <none>
+kube-public       <none>
+kube-system       <none>
+kuboard           <none>
+-- 默认 SA 自动挂载 token 的工作负载数 --
+0
+########## [12] 备份状态 ##########
+-- cron 配置 --
+-- 最新快照年龄 --
+-- PKI 包 --
+########## [99] 巡检结束 ##########
